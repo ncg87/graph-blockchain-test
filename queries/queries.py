@@ -34,74 +34,145 @@ def coin_volume_query():
   
 ### THE GRAPH QUERIES ###
 
-def get_swap_query():
-    query = """
+def get_swaps_query():
+    """
+    Query to fetch swap events within a time period.
+    """
+    return """
     query GetSwaps($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
-      transactions(
-        first: 1000,
-        skip: $skip,
-        orderBy: timestamp,
-        orderDirection: asc,
-        where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
-      ) {
-        id
-        blockNumber
-        timestamp
-        swaps {
-          sender
-          recipient
-          token0 {
-            symbol
-            decimals
+        swaps(
+            first: 1000,
+            skip: $skip,
+            orderBy: timestamp,
+            orderDirection: asc,
+            where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
+        ) {
             id
-          }
-          token1 {
-            symbol
-            decimals
-            id
-          }
-          amount0
-          amount1
-          amountUSD
-          pool {
-            token0Price
-            token1Price
-            liquidity
-          }
+            timestamp
+            blockNumber
+            sender
+            recipient
+            token0 {
+                id
+                symbol
+                decimals
+            }
+            token1 {
+                id
+                symbol
+                decimals
+            }
+            amount0
+            amount1
+            amountUSD
+            pool {
+                token0Price
+                token1Price
+                liquidity
+            }
         }
-      }
     }
     """
-    
-    return query
 
-def liquidity_query(subgraph_url):
-    query = """
-    query LiquidityVolumes($startTimestamp: Int!, $endTimestamp: Int!) {
-        mints(first: 1000, orderBy: timestamp, orderDirection: desc, where: {timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp}) {
-            token0 {
+def get_mints_query():
+    """
+    Query to fetch mint (liquidity addition) events within a time period.
+    """
+    return """
+    query GetMints($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
+        mints(
+            first: 1000,
+            skip: $skip,
+            orderBy: timestamp,
+            orderDirection: asc,
+            where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
+        ) {
             id
-            symbol
-            }
-            token1 {
-            id
-            symbol
+            timestamp
+            blockNumber
+            pool {
+                id
+                token0 {
+                    id
+                    symbol
+                    decimals
+                }
+                token1 {
+                    id
+                    symbol
+                    decimals
+                }
             }
             amount0
             amount1
-        }
-        burns(first: 1000, orderBy: timestamp, orderDirection: desc, where: {timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp}) {
-            token0 {
-            id
-            symbol
-            }
-            token1 {
-            id
-            symbol
-            }
-            amount0
-            amount1
+            amountUSD
+            sender
         }
     }
     """
-    return query
+
+def get_burns_query():
+    """
+    Query to fetch burn (liquidity removal) events within a time period.
+    """
+    return """
+    query GetBurns($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
+        burns(
+            first: 1000,
+            skip: $skip,
+            orderBy: timestamp,
+            orderDirection: asc,
+            where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
+        ) {
+            id
+            timestamp
+            blockNumber
+            pool {
+                id
+                token0 {
+                    id
+                    symbol
+                    decimals
+                }
+                token1 {
+                    id
+                    symbol
+                    decimals
+                }
+            }
+            amount0
+            amount1
+            amountUSD
+            sender
+        }
+    }
+    """
+
+def get_flashloans_query():
+    """
+    Query to fetch flash loan events within a time period.
+    """
+    return """
+    query GetFlashLoans($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
+        flashLoans(
+            first: 1000,
+            skip: $skip,
+            orderBy: timestamp,
+            orderDirection: asc,
+            where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
+        ) {
+            id
+            timestamp
+            blockNumber
+            token {
+                id
+                symbol
+                decimals
+            }
+            amount
+            amountUSD
+            initiator
+            fee
+        }
+    }
+    """

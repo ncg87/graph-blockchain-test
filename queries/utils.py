@@ -2,6 +2,9 @@ import requests
 import time
 from queries.queries import get_swap_query
 
+
+## Fetch data ##
+
 def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
     """
     Fetch transactions from The Graph for a specific day using a start and end timestamp.
@@ -49,22 +52,78 @@ def fetch_recent_transactions(subgraph_url, buffer_seconds=300):
     end_timestamp = now
     return fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url)
 
-def analyze_swap_legitimacy(swap):
-    # Check liquidity is substantial (e.g., > $10000)
-    liquidity = float(swap['pool']['liquidity']) / 1e18  # Convert from wei
-    
-    # Verify price relationship
-    token0_price = float(swap['pool']['token0Price'])
-    token1_price = float(swap['pool']['token1Price'])
-    price_relationship = abs(1/token0_price - token1_price) < 0.0001  # Should be close
-    
-    # Check trade size vs liquidity
-    trade_value_usd = float(swap['amountUSD'])
-    trade_to_liquidity_ratio = trade_value_usd / liquidity
-    
-    return {
-        "sufficient_liquidity": liquidity > 10000,
-        "valid_price_relationship": price_relationship,
-        "reasonable_trade_size": trade_to_liquidity_ratio < 0.1,  # Trade < 10% of liquidity
-        "usd_value": trade_value_usd
-    }
+
+## Process data ##
+def process_swaps(data):
+    """Process swap events from GraphQL response."""
+    processed_swaps = []
+    if 'swaps' in data:
+        for swap in data['data']['swaps']:
+            processed_swaps.append({
+                'id': swap['id'],
+                'timestamp': int(swap['timestamp']),
+                'block_number': int(swap['blockNumber']),
+                'sender': swap['sender'],
+                'recipient': swap['recipient'],
+                'token0_symbol': swap['token0']['symbol'],
+                'token1_symbol': swap['token1']['symbol'],
+                'amount0': float(swap['amount0']),
+                'amount1': float(swap['amount1']),
+                'amount_usd': float(swap['amountUSD'])
+            })
+    return processed_swaps
+
+def process_mints(data):
+    """Process mint events from GraphQL response."""
+    processed_mints = []
+    if 'mints' in data:
+        for mint in data['data']['mints']:
+            processed_mints.append({
+                'id': mint['id'],
+                'timestamp': int(mint['timestamp']),
+                'block_number': int(mint['blockNumber']),
+                'pool_id': mint['pool']['id'],
+                'token0_symbol': mint['pool']['token0']['symbol'],
+                'token1_symbol': mint['pool']['token1']['symbol'],
+                'amount0': float(mint['amount0']),
+                'amount1': float(mint['amount1']),
+                'amount_usd': float(mint['amountUSD']),
+                'sender': mint['sender']
+            })
+    return processed_mints
+
+def process_burns(data):
+    """Process burn events from GraphQL response."""
+    processed_burns = []
+    if 'burns' in data:
+        for burn in data['data']['burns']:
+            processed_burns.append({
+                'id': burn['id'],
+                'timestamp': int(burn['timestamp']),
+                'block_number': int(burn['blockNumber']),
+                'pool_id': burn['pool']['id'],
+                'token0_symbol': burn['pool']['token0']['symbol'],
+                'token1_symbol': burn['pool']['token1']['symbol'],
+                'amount0': float(burn['amount0']),
+                'amount1': float(burn['amount1']),
+                'amount_usd': float(burn['amountUSD']),
+                'sender': burn['sender']
+            })
+    return processed_burns
+
+def process_flashloans(data):
+    """Process flash loan events from GraphQL response."""
+    processed_flashloans = []
+    if 'flashLoans' in data:
+        for loan in data['data']['flashLoans']:
+            processed_flashloans.append({
+                'id': loan['id'],
+                'timestamp': int(loan['timestamp']),
+                'block_number': int(loan['blockNumber']),
+                'token_symbol': loan['token']['symbol'],
+                'amount': float(loan['amount']),
+                'amount_usd': float(loan['amountUSD']),
+                'fee': float(loan['fee']),
+                'initiator': loan['initiator']
+            })
+    return processed_flashloans
