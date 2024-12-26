@@ -1,6 +1,6 @@
 import requests
 import time
-
+from queries.queries import swap_query
 
 def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
     """
@@ -10,7 +10,7 @@ def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
     transactions = []
     skip = 0
     query = """
-    query GetTransactions($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
+    query GetData($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
       transactions(
         first: 1000,
         skip: $skip,
@@ -26,13 +26,22 @@ def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
           recipient
           token0 {
             symbol
+            decimals
+            id
           }
           token1 {
             symbol
+            decimals
+            id
           }
           amount0
           amount1
           amountUSD
+          pool {
+            token0Price
+            token1Price
+            liquidity
+          }
         }
       }
     }
@@ -76,4 +85,22 @@ def fetch_recent_transactions(subgraph_url, buffer_seconds=300):
     end_timestamp = now
     return fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url)
 
-  
+def analyze_swap_legitimacy(swap):
+    # Check liquidity is substantial (e.g., > $10000)
+    liquidity = float(swap['pool']['liquidity']) / 1e18  # Convert from wei
+    
+    # Verify price relationship
+    token0_price = float(swap['pool']['token0Price'])
+    token1_price = float(swap['pool']['token1Price'])
+    price_relationship = abs(1/token0_price - token1_price) < 0.0001  # Should be close
+    
+    # Check trade size vs liquidity
+    trade_value_usd = float(swap['amountUSD'])
+    trade_to_liquidity_ratio = trade_value_usd / liquidity
+    
+    return {
+        "sufficient_liquidity": liquidity > 10000,
+        "valid_price_relationship": price_relationship,
+        "reasonable_trade_size": trade_to_liquidity_ratio < 0.1,  # Trade < 10% of liquidity
+        "usd_value": trade_value_usd
+    }

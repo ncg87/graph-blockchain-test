@@ -7,9 +7,12 @@ class Database:
         """
         Initialize the database connection.
         """
-        self.connection = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
+        self.dbname = dbname
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
+        self.open_connection()
         self.cursor = self.connection.cursor()
         self._initialize_tables()
 
@@ -40,9 +43,9 @@ class Database:
         """
         insert_query = '''
         INSERT INTO transactions (
-            id, block_number, timestamp, sender, recipient, token0, token1, amount_usd
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (id) DO NOTHING;
+            id, block_number, timestamp, sender, recipient, token0, token1, amount_usd, amount0, amount1)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING;
         '''
         # Prepare data for batch insertion
         transaction_data = []
@@ -57,9 +60,9 @@ class Database:
                         swap["recipient"],
                         swap["token0"]["symbol"],
                         swap["token1"]["symbol"],
-                        float(swap.get("amountUSD", 0)),
-                        float(swap.get("amount0", 0)),
-                        float(swap.get("amount1", 0))
+                        float(swap["amountUSD"]),
+                        float(swap["amount0"]),
+                        float(swap["amount1"])
                     ))
                 except KeyError as e:
                     print(f"Missing field in transaction: {e}, txn: {txn}, swap: {swap}")
@@ -108,6 +111,17 @@ class Database:
         self.cursor.execute(select_query, (limit,))
         return self.cursor.fetchall()
 
+    def execute_query(self, query):
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+        return results
+    
+    def open_connection(self):
+        self.connection = psycopg2.connect(
+            dbname=self.dbname, user=self.user, password=self.password, host=self.host, port=self.port
+        )
+        self.cursor = self.connection.cursor()
+    
     def close_connection(self):
         """
         Close the database connection.
