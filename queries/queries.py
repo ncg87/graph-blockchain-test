@@ -34,10 +34,10 @@ def coin_volume_query():
   
 ### THE GRAPH QUERIES ###
 
-def swap_query(subgraph_url):
+def get_swap_query():
     query = """
     query GetSwaps($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
-      swaps(
+      transactions(
         first: 1000,
         skip: $skip,
         orderBy: timestamp,
@@ -52,11 +52,22 @@ def swap_query(subgraph_url):
           recipient
           token0 {
             symbol
+            decimals
+            id
           }
           token1 {
             symbol
+            decimals
+            id
           }
+          amount0
+          amount1
           amountUSD
+          pool {
+            token0Price
+            token1Price
+            liquidity
+          }
         }
       }
     }

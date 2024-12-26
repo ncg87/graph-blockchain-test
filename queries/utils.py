@@ -1,6 +1,6 @@
 import requests
 import time
-from queries.queries import swap_query
+from queries.queries import get_swap_query
 
 def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
     """
@@ -9,43 +9,7 @@ def fetch_transactions_for_day(start_timestamp, end_timestamp, subgraph_url):
     """
     transactions = []
     skip = 0
-    query = """
-    query GetData($startTimestamp: Int!, $endTimestamp: Int!, $skip: Int!) {
-      transactions(
-        first: 1000,
-        skip: $skip,
-        orderBy: timestamp,
-        orderDirection: asc,
-        where: { timestamp_gte: $startTimestamp, timestamp_lte: $endTimestamp }
-      ) {
-        id
-        blockNumber
-        timestamp
-        swaps {
-          sender
-          recipient
-          token0 {
-            symbol
-            decimals
-            id
-          }
-          token1 {
-            symbol
-            decimals
-            id
-          }
-          amount0
-          amount1
-          amountUSD
-          pool {
-            token0Price
-            token1Price
-            liquidity
-          }
-        }
-      }
-    }
-    """
+    query = get_swap_query()
 
     while True:
         # Set up the query variables
