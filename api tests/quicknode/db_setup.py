@@ -79,13 +79,13 @@ class SolanaProgramDB:
             
             # Update instructions if provided
             if instruction_names:
-                for inst_name, inst_count in instruction_names.items():
+                for inst_name in instruction_names:
                     c.execute('''
                     INSERT INTO instructions (program_id, instruction_name, first_seen, total_calls)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(program_id, instruction_name) DO UPDATE SET
                         total_calls = total_calls + ?
-                    ''', (program_id, inst_name, current_time, inst_count, inst_count))
+                    ''', (program_id, inst_name, current_time, count, count))
             
             conn.commit()
     
